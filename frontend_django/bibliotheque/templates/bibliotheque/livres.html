@@ -1,0 +1,251 @@
+{% extends "bibliotheque/base.html" %}
+
+{% block title %}Liste des livres - Bibliothèque{% endblock %}
+{% block page_title %}Liste des livres{% endblock %}
+
+{% block content %}
+<div class="page-intro">
+    <div>
+        <div class="eyebrow-accent">COLLECTION</div>
+        <h2>Votre bibliothèque</h2>
+        <p>Recherchez, filtrez et gérez vos ouvrages.</p>
+    </div>
+    <a href="{% url 'ajouter' %}" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i> Ajouter un livre</a>
+</div>
+
+<section class="panel mb-4">
+    <div class="panel-body">
+        <form method="get" action="{% url 'livres' %}">
+            <div class="row g-3 align-items-end">
+                <div class="col-lg-3 col-md-6">
+                    <label class="form-label" for="filter-title">Titre</label>
+                    <input class="form-control" type="search" name="titre" id="filter-title" placeholder="Rechercher un titre" value="{{ query.titre }}">
+                </div>
+                <div class="col-lg-2 col-md-6">
+                    <label class="form-label" for="filter-author">Auteur</label>
+                    <select class="form-select" name="auteur" id="filter-author">
+                        <option value="">Tous les auteurs</option>
+                        {% for author in filters.auteurs %}<option value="{{ author }}" {% if query.auteur == author %}selected{% endif %}>{{ author }}</option>{% endfor %}
+                    </select>
+                </div>
+                <div class="col-lg-2 col-md-4">
+                    <label class="form-label" for="filter-year">Année</label>
+                    <select class="form-select" name="annee" id="filter-year">
+                        <option value="">Toutes les années</option>
+                        {% for year in filters.annees %}<option value="{{ year }}" {% if query.annee == year|stringformat:"s" %}selected{% endif %}>{{ year }}</option>{% endfor %}
+                    </select>
+                </div>
+                <div class="col-lg-2 col-md-4">
+                    <label class="form-label" for="filter-category">Catégorie</label>
+                    <select class="form-select" name="categorie" id="filter-category">
+                        <option value="">Toutes les catégories</option>
+                        {% for category in filters.categories %}<option value="{{ category }}" {% if query.categorie == category %}selected{% endif %}>{{ category }}</option>{% endfor %}
+                    </select>
+                </div>
+                <div class="col-lg-2 col-md-4">
+                    <label class="form-label" for="sort-books">Trier par</label>
+                    <select class="form-select" name="tri" id="sort-books">
+                        <option value="id" {% if tri == "id" %}selected{% endif %}>Ordre d'ajout</option>
+                        <option value="titre" {% if tri == "titre" %}selected{% endif %}>Titre</option>
+                        <option value="auteur" {% if tri == "auteur" %}selected{% endif %}>Auteur</option>
+                        <option value="categorie" {% if tri == "categorie" %}selected{% endif %}>Catégorie</option>
+                        <option value="annee" {% if tri == "annee" %}selected{% endif %}>Année</option>
+                    </select>
+                </div>
+                <div class="col-lg-1 col-md-4">
+                    <label class="form-label" for="sort-order">Ordre</label>
+                    <select class="form-select" name="ordre" id="sort-order">
+                        <option value="asc" {% if ordre == "asc" %}selected{% endif %}>A-Z</option>
+                        <option value="desc" {% if ordre == "desc" %}selected{% endif %}>Z-A</option>
+                    </select>
+                </div>
+                <div class="col-12 d-flex flex-wrap gap-2">
+                    <button class="btn btn-primary" type="submit"><i class="bi bi-search me-1"></i> Filtrer</button>
+                    <a class="btn btn-outline-secondary" href="{% url 'livres' %}">Réinitialiser</a>
+                </div>
+            </div>
+        </form>
+    </div>
+</section>
+
+<section class="panel">
+    <div class="section-heading">
+        <h3>Ouvrages enregistrés <span class="text-secondary">({{ books|length }})</span></h3>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead><tr><th>Livre et couverture</th><th>Auteur</th><th>Publication</th><th>Catégorie</th><th>Description du livre</th><th class="text-end">Actions</th></tr></thead>
+            <tbody>
+                {% for book in books %}
+                <tr>
+                    <td>
+                        <div class="d-flex align-items-center gap-3">
+                            {% if book.image_livre %}<img class="book-cover" src="{{ api_url }}{{ book.image_livre }}" alt="Couverture de {{ book.titre }}">{% else %}<span class="book-cover-placeholder">Image de couverture non définie</span>{% endif %}
+                            <span><span class="book-title">{{ book.titre }}</span>{% if book.description %}<span class="book-subtitle">{{ book.description|truncatechars:65 }}</span>{% endif %}</span>
+                        </div>
+                    </td>
+                    <td>{{ book.auteur }}</td>
+                    <td>{% if book.date_publication %}{{ book.date_publication }}{% else %}{{ book.annee }}{% endif %}</td>
+                    <td><span class="category-pill">{{ book.categorie }}</span></td>
+                    <td>{% if book.description %}{{ book.description|truncatechars:90 }}{% else %}<span class="text-secondary">Aucune description</span>{% endif %}</td>
+                    <td>
+                        <div class="actions">
+                            <a href="{% url 'modifier' book.id %}" class="action-button" aria-label="Modifier {{ book.titre }}" title="Modifier"><i class="bi bi-pencil"></i></a>
+                            {% if book.fichier_livre %}<a href="{% url 'telecharger' book.id %}" class="action-button action-download" aria-label="Télécharger {{ book.titre }}" title="Télécharger le livre"><i class="bi bi-download" aria-hidden="true"></i><span>Télécharger</span></a>{% else %}<span class="action-button action-download action-disabled" aria-disabled="true" aria-label="Aucun fichier à télécharger pour {{ book.titre }}" title="Aucun fichier numérique disponible"><i class="bi bi-download" aria-hidden="true"></i><span>Télécharger</span></span>{% endif %}
+                            <button class="action-button danger" type="button" data-bs-toggle="modal" data-bs-target="#deleteModal" data-delete-url="{% url 'supprimer' book.id %}" data-book-title="{{ book.titre }}" aria-label="Supprimer {{ book.titre }}" title="Supprimer"><i class="bi bi-trash3"></i></button>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="6"><div class="empty-state"><i class="bi bi-journal-x"></i><strong>Aucun livre trouvé</strong><div class="mt-1">Essayez de modifier vos filtres ou ajoutez un nouvel ouvrage.</div></div></td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content panel">
+            <div class="modal-header border-bottom-0">
+                <h2 class="modal-title fs-5" id="deleteModalTitle">Confirmer la suppression</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+            </div>
+            <div class="modal-body pt-0" id="deleteConfirmPanel">
+                <p class="mb-1">Voulez-vous vraiment supprimer <strong id="deleteBookTitle">ce livre</strong> ?</p>
+                <p class="text-secondary small mb-0">Cette action est irréversible. Le livre sera retiré de la bibliothèque.</p>
+            </div>
+            <div class="modal-body pt-0 d-none" id="deleteResultPanel" role="status" aria-live="polite">
+                <p class="mb-1"><i id="deleteResultIcon" class="bi bi-check-circle-fill text-success me-2" aria-hidden="true"></i><span id="deleteResultMessage"></span></p>
+                <p id="deleteRetryHint" class="text-secondary small mb-0 d-none">La suppression n'a pas abouti. Vérifiez votre connexion et réessayez.</p>
+            </div>
+            <form id="deleteBookForm" method="post">
+                {% csrf_token %}
+            </form>
+            <div class="modal-footer border-top-0" id="deleteConfirmActions">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button id="confirmDeleteButton" type="submit" form="deleteBookForm" class="btn btn-danger">Oui, supprimer</button>
+            </div>
+            <div class="modal-footer border-top-0 d-none" id="deleteResultActions">
+                <button id="retryDeleteButton" type="button" class="btn btn-primary d-none">Réessayer</button>
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Fermer</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    (() => {
+        const modalElement = document.getElementById("deleteModal");
+        document.body.append(modalElement);
+        const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
+        const form = document.getElementById("deleteBookForm");
+        const confirmButton = document.getElementById("confirmDeleteButton");
+        const title = document.getElementById("deleteModalTitle");
+        const confirmPanel = document.getElementById("deleteConfirmPanel");
+        const confirmActions = document.getElementById("deleteConfirmActions");
+        const resultPanel = document.getElementById("deleteResultPanel");
+        const resultActions = document.getElementById("deleteResultActions");
+        const resultMessage = document.getElementById("deleteResultMessage");
+        const resultIcon = document.getElementById("deleteResultIcon");
+        const retryHint = document.getElementById("deleteRetryHint");
+        const retryButton = document.getElementById("retryDeleteButton");
+        let selectedRow = null;
+        let selectedTrigger = null;
+        let isDeleting = false;
+        let reloadAfterSuccess = false;
+
+        const showConfirmation = () => {
+            title.textContent = "Confirmer la suppression";
+            confirmPanel.classList.remove("d-none");
+            confirmActions.classList.remove("d-none");
+            resultPanel.classList.add("d-none");
+            resultActions.classList.add("d-none");
+            retryHint.classList.add("d-none");
+            retryButton.classList.add("d-none");
+        };
+
+        modalElement.addEventListener("show.bs.modal", (event) => {
+            const trigger = event.relatedTarget;
+            if (!trigger) return;
+            form.action = trigger.dataset.deleteUrl;
+            document.getElementById("deleteBookTitle").textContent = trigger.dataset.bookTitle;
+            selectedRow = trigger.closest("tr");
+            selectedTrigger = trigger;
+            showConfirmation();
+        });
+
+        form.addEventListener("submit", async (event) => {
+            event.preventDefault();
+            if (isDeleting) return;
+            isDeleting = true;
+            confirmButton.disabled = true;
+            confirmButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Suppression…';
+            try {
+                const response = await fetch(form.action, {
+                    method: "POST",
+                    credentials: "same-origin",
+                    headers: {
+                        "X-CSRFToken": form.querySelector("[name=csrfmiddlewaretoken]").value,
+                        "X-Requested-With": "XMLHttpRequest",
+                    },
+                });
+                const result = await response.json().catch(() => ({}));
+                if (!response.ok || !result.success) {
+                    throw new Error(result.message || "La suppression a échoué.");
+                }
+                title.textContent = "Suppression effectuée";
+                resultMessage.textContent = result.message;
+                resultIcon.className = "bi bi-check-circle-fill text-success me-2";
+                selectedRow?.remove();
+                const count = document.querySelector(".section-heading h3 .text-secondary");
+                if (count) {
+                    const remaining = document.querySelectorAll("tbody tr").length;
+                    count.textContent = `(${remaining})`;
+                    if (remaining === 0) {
+                        const emptyRow = document.createElement("tr");
+                        emptyRow.innerHTML = '<td colspan="6"><div class="empty-state"><i class="bi bi-journal-x"></i><strong>Aucun livre trouvé</strong><div class="mt-1">Essayez de modifier vos filtres ou ajoutez un nouvel ouvrage.</div></div></td>';
+                        document.querySelector("tbody").append(emptyRow);
+                    }
+                }
+                reloadAfterSuccess = true;
+            } catch (error) {
+                title.textContent = "Suppression impossible";
+                resultMessage.textContent = error instanceof Error
+                    ? error.message
+                    : "Une erreur est survenue pendant la suppression.";
+                resultIcon.className = "bi bi-exclamation-circle-fill text-danger me-2";
+                retryHint.classList.remove("d-none");
+                retryButton.classList.remove("d-none");
+            } finally {
+                isDeleting = false;
+                confirmButton.disabled = false;
+                confirmButton.textContent = "Oui, supprimer";
+                confirmPanel.classList.add("d-none");
+                confirmActions.classList.add("d-none");
+                resultPanel.classList.remove("d-none");
+                resultActions.classList.remove("d-none");
+                modal.handleUpdate();
+            }
+        });
+
+        retryButton.addEventListener("click", () => {
+            showConfirmation();
+            modal.handleUpdate();
+        });
+        modalElement.addEventListener("hide.bs.modal", () => {
+            if (modalElement.contains(document.activeElement)) {
+                document.activeElement.blur();
+            }
+        });
+        modalElement.addEventListener("hidden.bs.modal", () => {
+            if (selectedTrigger?.isConnected) selectedTrigger.focus();
+        });
+        modalElement.addEventListener("hidden.bs.modal", () => {
+            if (reloadAfterSuccess) window.location.reload();
+        });
+    })();
+</script>
+{% endblock %}

@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Bibliothèque</title>
+    <style>
+        :root {
+            color-scheme: light;
+            font-family: Inter, "Segoe UI", sans-serif;
+            color: #20243a;
+            background: #f5f6fb;
+        }
+        * { box-sizing: border-box; }
+        body { margin: 0; }
+        a { text-decoration: none; color: #464feb; }
+        .hero {
+            padding: 48px 24px;
+            color: white;
+            background: linear-gradient(120deg, #464feb, #7a55d8);
+        }
+        .hero-content, main { width: min(100% - 32px, 1000px); margin: 0 auto; }
+        .hero h1 { margin: 0 0 8px; font-size: clamp(2rem, 5vw, 3rem); }
+        .hero p { margin: 0; color: #e7e8ff; }
+        main { padding: 28px 0 56px; }
+        .panel {
+            margin-bottom: 24px;
+            padding: 24px;
+            border: 1px solid #e6e6e6;
+            border-radius: 14px;
+            background: white;
+            box-shadow: 0 8px 24px #24264a0a;
+        }
+        h2 { margin: 0 0 18px; font-size: 1.25rem; }
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 14px;
+        }
+        label { display: grid; gap: 6px; font-size: .9rem; font-weight: 600; }
+        input {
+            width: 100%;
+            padding: 11px 12px;
+            border: 1px solid #d9dbea;
+            border-radius: 8px;
+            font: inherit;
+        }
+        input:focus { outline: 2px solid #464feb55; border-color: #464feb; }
+        button {
+            padding: 10px 14px;
+            border: 0;
+            border-radius: 8px;
+            color: white;
+            background: #464feb;
+            font: inherit;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        button:hover { background: #353bd2; }
+        button:disabled { opacity: .6; cursor: wait; }
+        .form-actions { display: flex; align-items: center; gap: 12px; margin-top: 16px; }
+        #form-message { margin: 0; color: #b42318; font-size: .9rem; }
+        .table-wrap { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; text-align: left; }
+        tr th, tr td { padding: 12px; border: 1px solid #e6e6e6; }
+        tr th { background-color: #f5f5f5; font-size: .88rem; }
+        .delete-button { padding: 7px 10px; background: #c93745; }
+        .delete-button:hover { background: #a82835; }
+        .empty { padding: 28px 12px; color: #686d80; text-align: center; }
+        .count { margin: -8px 0 16px; color: #686d80; font-size: .9rem; }
+        @media (max-width: 600px) {
+            .hero { padding: 36px 0; }
+            .form-grid { grid-template-columns: 1fr; }
+            .panel { padding: 18px; }
+        }
+    </style>
+</head>
+<body>
+    <header class="hero">
+        <div class="hero-content">
+            <h1>Ma bibliothèque</h1>
+            <p>Consulte et gère les livres de ta collection.</p>
+        </div>
+    </header>
+    <main>
+        <section class="panel" aria-labelledby="add-title">
+            <h2 id="add-title">Ajouter un livre</h2>
+            <form id="book-form">
+                <div class="form-grid">
+                    <label for="titre">Titre
+                        <input id="titre" name="titre" maxlength="200" required>
+                    </label>
+                    <label for="auteur">Auteur
+                        <input id="auteur" name="auteur" maxlength="150" required>
+                    </label>
+                    <label for="annee">Année
+                        <input id="annee" name="annee" type="number" min="0" max="9999" required>
+                    </label>
+                    <label for="categorie">Catégorie
+                        <input id="categorie" name="categorie" maxlength="100" required>
+                    </label>
+                </div>
+                <div class="form-actions">
+                    <button id="submit-button" type="submit">Ajouter le livre</button>
+                    <p id="form-message" role="status" aria-live="polite"></p>
+                </div>
+            </form>
+        </section>
+
+        <section class="panel" aria-labelledby="books-title">
+            <h2 id="books-title">Livres enregistrés</h2>
+            <p class="count">{{ books|length }} livre(s)</p>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Titre</th>
+                            <th>Auteur</th>
+                            <th>Année</th>
+                            <th>Catégorie</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for book in books %}
+                        <tr>
+                            <td>{{ book.titre }}</td>
+                            <td>{{ book.auteur }}</td>
+                            <td>{{ book.annee }}</td>
+                            <td>{{ book.categorie }}</td>
+                            <td>
+                                <button class="delete-button" type="button" data-book-id="{{ book.id }}">
+                                    Supprimer
+                                </button>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td class="empty" colspan="5">Aucun livre pour le moment. Ajoute le premier ci-dessus.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+        <p><a href="/docs">Ouvrir la documentation de l’API (Swagger)</a></p>
+    </main>
+    <script>
+        const form = document.querySelector("#book-form");
+        const formMessage = document.querySelector("#form-message");
+        const submitButton = document.querySelector("#submit-button");
+
+        form.addEventListener("submit", async (event) => {
+            event.preventDefault();
+            formMessage.textContent = "";
+            submitButton.disabled = true;
+            const payload = Object.fromEntries(new FormData(form));
+            payload.annee = Number(payload.annee);
+
+            try {
+                const response = await fetch("/books/", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload),
+                });
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail?.[0]?.msg ?? error.detail ?? "Impossible d’ajouter le livre.");
+                }
+                window.location.reload();
+            } catch (error) {
+                formMessage.textContent = error.message;
+                submitButton.disabled = false;
+            }
+        });
+
+        document.querySelectorAll(".delete-button").forEach((button) => {
+            button.addEventListener("click", async () => {
+                if (!window.confirm("Supprimer ce livre ?")) return;
+                button.disabled = true;
+                try {
+                    const response = await fetch(`/books/${button.dataset.bookId}`, { method: "DELETE" });
+                    if (!response.ok) throw new Error("Impossible de supprimer le livre.");
+                    window.location.reload();
+                } catch (error) {
+                    window.alert(error.message);
+                    button.disabled = false;
+                }
+            });
+        });
+    </script>
+</body>
+</html>

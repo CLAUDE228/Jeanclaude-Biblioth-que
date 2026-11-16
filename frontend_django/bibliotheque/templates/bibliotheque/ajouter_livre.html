@@ -1,0 +1,39 @@
+{% extends "bibliotheque/base.html" %}
+
+{% block title %}Ajouter un livre - Bibliothèque{% endblock %}
+{% block page_title %}Ajouter un livre{% endblock %}
+
+{% block content %}
+<div class="page-intro">
+    <div>
+        <div class="eyebrow-accent">NOUVEL OUVRAGE</div>
+        <h2>Enrichir la collection</h2>
+        <p>Renseignez les informations du livre et ajoutez ses fichiers si vous en disposez.</p>
+    </div>
+</div>
+<section class="panel">
+    <div class="panel-body p-lg-4">
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            {{ form.annee }}
+            {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
+            <div class="row g-3">
+                {% for field in form %}
+                {% if not field.is_hidden %}
+                <div class="{% if field.name == 'description' or field.name == 'fichier_livre' or field.name == 'image_livre' %}col-12{% else %}col-md-6{% endif %}{% if field.name == 'nouvel_auteur' %} d-none{% endif %}{% if field.name == 'nouvelle_categorie' %} d-none{% endif %}" {% if field.name == 'nouvel_auteur' %}data-new-entry="nouvel-auteur"{% endif %}{% if field.name == 'nouvelle_categorie' %}data-new-entry="nouvelle-categorie"{% endif %}>
+                    <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {% for error in field.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                </div>
+                {% endif %}
+                {% endfor %}
+            </div>
+            <p class="text-secondary small mt-3 mb-4">Choisissez un auteur et une catégorie existants, ou sélectionnez « Saisir… » pour en créer de nouveaux. La date de publication est nécessaire. Formats acceptés : PDF, DOCX ou EPUB (20 Mo maximum) ; images JPG, PNG, GIF ou WEBP (5 Mo maximum).</p>
+            <div class="d-flex flex-wrap gap-2">
+                <button class="btn btn-primary" type="submit"><i class="bi bi-check2 me-1"></i> Enregistrer le livre</button>
+                <a href="{% url 'livres' %}" class="btn btn-outline-secondary">Annuler</a>
+            </div>
+        </form>
+    </div>
+</section>
+{% endblock %}

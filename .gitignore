@@ -1,0 +1,16 @@
+.env
+.env.*
+!.env.example
+.venv/
+env/
+venv/
+__pycache__/
+**/__pycache__/
+*.py[cod]
+*.sqlite3
+*.db
+/uploads/
+**/staticfiles/
+.pytest_cache/
+.coverage
+mot de passe.docx

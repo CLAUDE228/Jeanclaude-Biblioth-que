@@ -1,0 +1,49 @@
+{% extends "bibliotheque/base.html" %}
+
+{% block title %}Statistiques - Bibliothèque{% endblock %}
+{% block page_title %}Statistiques{% endblock %}
+
+{% block content %}
+<div class="page-intro">
+    <div><div class="eyebrow-accent">ANALYSE</div><h2>La collection en chiffres</h2><p>Explorez la répartition des ouvrages de votre bibliothèque.</p></div>
+</div>
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-4"><div class="stat-card"><span class="stat-icon"><i class="bi bi-book"></i></span><div class="stat-label">Total des livres</div><div class="stat-value">{{ total }}</div></div></div>
+    <div class="col-sm-6 col-xl-4"><div class="stat-card"><span class="stat-icon"><i class="bi bi-people"></i></span><div class="stat-label">Auteurs</div><div class="stat-value">{{ authors_total }}</div></div></div>
+    <div class="col-sm-6 col-xl-4"><div class="stat-card"><span class="stat-icon"><i class="bi bi-bookmark-star"></i></span><div class="stat-label">Catégories</div><div class="stat-value">{{ categories_total }}</div></div></div>
+</div>
+<section class="panel">
+    <div class="section-heading"><h3>Répartition des livres par catégorie</h3></div>
+    <div class="panel-body">
+        {% if total %}<div class="chart-wrap"><canvas id="category-chart" aria-label="Diagramme des livres par catégorie" role="img"></canvas></div>
+        {% else %}<div class="empty-state"><i class="bi bi-pie-chart"></i>Aucune donnée disponible pour afficher le graphique.</div>{% endif %}
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+{% if total %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{{ labels|json_script:"category-labels" }}
+{{ valeurs|json_script:"category-values" }}
+<script>
+    (() => {
+        const labels = JSON.parse(document.getElementById("category-labels").textContent);
+        const values = JSON.parse(document.getElementById("category-values").textContent);
+        const colors = labels.map((_, index) => `hsl(${(index * 137.5) % 360} 68% 60%)`);
+        let chart;
+        const renderChart = () => {
+            const textColor = getComputedStyle(document.documentElement).getPropertyValue("--muted").trim();
+            if (chart) chart.destroy();
+            chart = new Chart(document.getElementById("category-chart"), {
+                type: "doughnut",
+                data: { labels, datasets: [{ data: values, backgroundColor: colors, borderWidth: 0, hoverOffset: 5 }] },
+                options: { cutout: "68%", plugins: { legend: { position: "bottom", labels: { color: textColor, usePointStyle: true, padding: 18 } } } },
+            });
+        };
+        renderChart();
+        window.addEventListener("bibliotheque-theme-change", renderChart);
+    })();
+</script>
+{% endif %}
+{% endblock %}

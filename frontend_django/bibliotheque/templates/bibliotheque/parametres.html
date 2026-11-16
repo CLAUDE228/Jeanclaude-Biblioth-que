@@ -1,0 +1,18 @@
+{% extends "bibliotheque/base.html" %}
+
+{% block title %}Paramètres - Bibliothèque{% endblock %}
+{% block page_title %}Paramètres{% endblock %}
+
+{% block content %}
+<div class="page-intro">
+    <div><div class="eyebrow-accent">PRÉFÉRENCES</div><h2>Personnalisez votre espace</h2><p>Choisissez l’apparence de votre interface.</p></div>
+</div>
+<section class="panel">
+    <div class="panel-body">
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+            <div><h3 class="h6 mb-1">Thème de l’application</h3><p class="text-secondary small mb-0">Votre choix est conservé sur cet appareil.</p></div>
+            <button type="button" class="btn btn-outline-secondary theme-toggle"><i class="bi bi-sun me-2"></i>Changer de thème</button>
+        </div>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,75 @@
+{% extends "bibliotheque/base.html" %}
+
+{% block title %}Tableau de bord - Bibliothèque{% endblock %}
+{% block page_title %}Tableau de bord{% endblock %}
+
+{% block content %}
+<div class="page-intro">
+    <div>
+        <div class="eyebrow-accent">APERÇU</div>
+        <h2>Bienvenue dans votre bibliothèque</h2>
+        <p>Un aperçu de votre collection et de son activité.</p>
+    </div>
+    <a href="{% url 'ajouter' %}" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i> Ajouter un livre</a>
+</div>
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-4"><div class="stat-card"><span class="stat-icon"><i class="bi bi-book"></i></span><div class="stat-label">Total des livres</div><div class="stat-value">{{ total }}</div><div class="stat-note">Ouvrages dans la collection</div></div></div>
+    <div class="col-sm-6 col-xl-4"><div class="stat-card"><span class="stat-icon"><i class="bi bi-people"></i></span><div class="stat-label">Auteurs</div><div class="stat-value">{{ authors_total }}</div><div class="stat-note">Auteurs représentés</div></div></div>
+    <div class="col-sm-6 col-xl-4"><div class="stat-card"><span class="stat-icon"><i class="bi bi-bookmark-star"></i></span><div class="stat-label">Catégories</div><div class="stat-value">{{ categories_total }}</div><div class="stat-note">Genres dans votre collection</div></div></div>
+</div>
+<div class="row g-4">
+    <div class="col-lg-7">
+        <section class="panel h-100">
+            <div class="section-heading"><h3>Ajouts récents</h3><a href="{% url 'livres' %}" class="small text-decoration-none">Voir la collection <i class="bi bi-arrow-right"></i></a></div>
+            <div class="table-responsive">
+                <table class="table align-middle">
+                    <thead><tr><th>Titre</th><th>Auteur</th><th>Année</th></tr></thead>
+                    <tbody>
+                        {% for book in books %}
+                        <tr><td class="book-title">{{ book.titre }}</td><td>{{ book.auteur }}</td><td>{{ book.annee }}</td></tr>
+                        {% empty %}
+                        <tr><td colspan="3"><div class="empty-state"><i class="bi bi-journal-plus"></i>Aucun livre pour le moment.</div></td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+    <div class="col-lg-5">
+        <section class="panel h-100">
+            <div class="section-heading"><h3>Livres par catégorie</h3><a href="{% url 'statistiques' %}" class="small text-decoration-none">Détails</a></div>
+            <div class="panel-body">
+                {% if total %}<div class="chart-wrap"><canvas id="category-chart" aria-label="Répartition des livres par catégorie" role="img"></canvas></div>
+                {% else %}<div class="empty-state"><i class="bi bi-pie-chart"></i>Les statistiques apparaîtront après vos premiers ajouts.</div>{% endif %}
+            </div>
+        </section>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{% if total %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{{ labels|json_script:"category-labels" }}
+{{ valeurs|json_script:"category-values" }}
+<script>
+    (() => {
+        const labels = JSON.parse(document.getElementById("category-labels").textContent);
+        const values = JSON.parse(document.getElementById("category-values").textContent);
+        const colors = labels.map((_, index) => `hsl(${(index * 137.5) % 360} 68% 60%)`);
+        let chart;
+        const renderChart = () => {
+            const textColor = getComputedStyle(document.documentElement).getPropertyValue("--muted").trim();
+            if (chart) chart.destroy();
+            chart = new Chart(document.getElementById("category-chart"), {
+                type: "doughnut",
+                data: { labels, datasets: [{ data: values, backgroundColor: colors, borderWidth: 0, hoverOffset: 5 }] },
+                options: { cutout: "68%", plugins: { legend: { position: "bottom", labels: { color: textColor, usePointStyle: true, padding: 18 } } } },
+            });
+        };
+        renderChart();
+        window.addEventListener("bibliotheque-theme-change", renderChart);
+    })();
+</script>
+{% endif %}
+{% endblock %}

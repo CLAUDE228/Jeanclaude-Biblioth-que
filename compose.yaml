@@ -1,0 +1,44 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    environment:
+      DATABASE_URL: sqlite:////data/books.db
+      UPLOADS_DIR: /data/uploads
+    volumes:
+      - ./books.db:/data/books.db
+      - ./uploads:/data/uploads
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/books/')"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    restart: unless-stopped
+
+  django:
+    build:
+      context: .
+      dockerfile: Dockerfile.django
+    environment:
+      API_URL: http://api:8000
+      PUBLIC_API_URL: http://localhost:8000
+      DJANGO_DATABASE_PATH: /data/django.sqlite3
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-local-docker-development-key-not-for-production}
+      DJANGO_DEBUG: "false"
+      DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1
+    volumes:
+      - ./frontend_django/django.sqlite3:/data/django.sqlite3
+    ports:
+      - "8001:8001"
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
